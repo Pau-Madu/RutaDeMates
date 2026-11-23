@@ -1,0 +1,20 @@
+{
+  "id": "examen-1",
+  "title": "Examen de repaso 1",
+  "subtitle": "Álgebra, programación lineal, combinatoria, probabilidad, distribuciones e inferencia",
+  "due": null,
+  "exercises": [
+    { "n": 1, "title": "Matrices 3x3: operaciones, determinantes e inversa", "block": "alg" },
+    { "n": 2, "title": "Ecuaciones matriciales y matrices con parámetro", "block": "alg" },
+    { "n": 3, "title": "Sistemas de ecuaciones (Gauss y Cramer)", "block": "alg" },
+    { "n": 4, "title": "Maximizar: la pastelería", "block": "pl" },
+    { "n": 5, "title": "Minimizar con restricciones ≥", "block": "pl" },
+    { "n": 6, "title": "Combinaciones, variaciones y permutaciones", "block": "comb" },
+    { "n": 7, "title": "Operaciones con sucesos", "block": "prob" },
+    { "n": 8, "title": "Tabla de contingencia", "block": "prob" },
+    { "n": 9, "title": "Árbol, probabilidad total y Bayes", "block": "prob" },
+    { "n": 10, "title": "Distribución binomial", "block": "dist" },
+    { "n": 11, "title": "Distribución normal", "block": "dist" },
+    { "n": 12, "title": "Intervalos de confianza y tamaño muestral", "block": "inf" }
+  ]
+}

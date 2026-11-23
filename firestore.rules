@@ -1,0 +1,69 @@
+rules_version = '2';
+// Ruta de Mates — quién puede leer y escribir qué.
+// Perfiles: el primero que entra y elige «profe» es el profe. Cada gemelo
+// elige su nombre la primera vez y queda vinculado a su cuenta de Google.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function roleDoc(r) { return /databases/$(database)/documents/roles/$(r); }
+    function holds(r) { return signedIn() && exists(roleDoc(r)) && get(roleDoc(r)).data.uid == request.auth.uid; }
+    function isTeacher() { return holds('profe'); }
+    function isStudent(st) { return st in ['manyl', 'lamine'] && holds(st); }
+    function isMember() { return isTeacher() || holds('manyl') || holds('lamine'); }
+    function ownsNew(st) { return isStudent(st) && request.resource.data.st == st; }
+
+    // Perfiles: cualquiera con sesión ve qué perfiles están cogidos (solo el uid).
+    match /roles/{r} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && r in ['profe', 'manyl', 'lamine']
+        && request.resource.data.keys().hasOnly(['uid', 'at'])
+        && request.resource.data.uid == request.auth.uid
+        && (r == 'profe' || exists(roleDoc('profe')))      // el profe entra primero
+        && !holds('profe') && !holds('manyl') && !holds('lamine'); // una cuenta, un perfil
+      allow delete: if isTeacher() && r != 'profe';
+    }
+    // Correo y nombre de cada cuenta: solo los ve el profe (y cada uno el suyo).
+    match /rolesInfo/{r} {
+      allow read: if isTeacher() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create, update: if signedIn() && request.resource.data.uid == request.auth.uid && holds(r);
+      allow delete: if isTeacher();
+    }
+
+    // Lo que solo cambia el profe.
+    match /exam/{d} { allow read: if isMember(); allow write: if isTeacher(); }
+    match /config/{d} { allow read: if isMember(); allow write: if isTeacher(); }
+    match /history/{d} { allow read: if isMember(); allow write: if isTeacher(); }
+    match /marks/{d} { allow read: if isMember(); allow write: if isTeacher(); }
+    match /files/{f} {
+      allow read: if isMember(); allow write: if isTeacher();
+      match /parts/{i} { allow read: if isMember(); allow write: if isTeacher(); }
+    }
+
+    // Notas: cada alumno solo ve la suya y solo cuando el profe la ha enviado.
+    match /grades/{d} {
+      allow read: if isTeacher() || (isStudent(resource.data.st) && resource.data.published == true);
+      allow write: if isTeacher();
+    }
+
+    // Lo que sube cada alumno: solo lo suyo.
+    match /subs/{d} {
+      allow read: if isMember();
+      allow create, update: if isTeacher() || ownsNew(request.resource.data.st);
+      allow delete: if isTeacher() || isStudent(resource.data.st);
+    }
+    match /photos/{d} {
+      allow read: if isMember();
+      allow create, update: if isTeacher() || ownsNew(request.resource.data.st);
+      allow delete: if isTeacher() || isStudent(resource.data.st);
+    }
+    match /photofull/{d} {
+      allow read: if isMember();
+      allow create, update: if isTeacher() || ownsNew(request.resource.data.st);
+      allow delete: if isTeacher() || isStudent(resource.data.st);
+    }
+    match /avatars/{st} { allow read: if isMember(); allow write: if isTeacher() || isStudent(st); }
+    match /rewards/{st} { allow read: if isMember(); allow write: if isTeacher() || isStudent(st); }
+  }
+}
